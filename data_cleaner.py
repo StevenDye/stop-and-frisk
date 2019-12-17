@@ -2,6 +2,7 @@
 """
 @authors: climatebrad, anilca-lab
 """
+import re
 import os.path
 import pandas as pd
 import numpy as np
@@ -158,6 +159,76 @@ REPLACE_DICT = {
              'FEMALE' : 'F'}
 }
 
+# cleaning the crimsusp entries.
+CRIMSUSP_REPLACE_DICT = {
+    'CRIMINAL POSSESSION WEAPON' : [
+        'CPW',
+        'CPW 3',
+        'CPW 4',
+        'C.P.W.',
+        'CRIMINAL POSSESSION OF WEAPON',
+        'C.P.W',
+        'CPW GUN',
+        'CPW FIREARM',
+        'FELONY CPW'
+    ],
+    'CRIMINAL TRESPASS' : [
+        'CRIMINAL TRESSPASS',
+        'CRIM TRES',
+        'CRIM TRESS',
+        'TRESPASSING',
+        'CRIMINAL  TRESSPASS',
+        'CRIM. TRESP.',
+        'CRIMINAL TRES',
+        'CRIM TRESSPASS'
+    ],
+    'BURGLARY' : [
+        'BURG',
+        'BURG.'
+    ],
+    'ROBBERY' : [
+        'ROB',
+        'ROBBERY PATTERN',
+        'ROBBERY/CPW',
+        'CPW/ROBBERY',
+        'ROBB',
+        'ROBBERY 1'
+    ],
+    'GRAND LARCENY AUTO' : [
+        'GLA',
+        'GLA - GRAND LARCENY AUTO',
+        'G.L.A.',
+        'G.L.A',
+        'GRAND LARCENY FROM AUTO',
+        'GLA/CPW'
+    ],
+    'CRIMINAL POSSESSION CONTROLLED SUBSTANCE' : [
+        'CRIMINAL POSSESSION OF CONTROL',
+        'CPCS',
+        'CRIMINAL POSSESION OF CONTROLL',
+        'CPCS 7'
+        'CPCS - CRIMINAL POSSESSION OF'
+        'DRUGS' 
+    ],
+    'CRIMINAL POSSESSION MARIJUANA' : [
+        'CRIMINAL POSSESSION OF MARIHUA'
+        'CPM'
+        'CPM - CRIMINAL POSSESSION OF M'
+    ],
+    'CRIMINAL SALE CONTROLLED SUBSTANCE' : [
+        'CRIMINAL SALE OF CONTROLLED SU', 
+        'DRUG SALES', 
+        'CSCS', 
+        'CSCS - CRIMINAL SALE OF CONTRO', 
+        'C.S.C.S.',
+        'NARCOTIC SALES',
+    ],
+    'CRIMINAL SALE MARIJUANA' : [
+         'CRIMINAL SALE OF MARIHUANA',   
+         'CRIMINAL SALE OF MARIJUANA',
+    ]
+}
+
 
 def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):
     """read in the sqf excel file and output csv file."""
@@ -167,11 +238,47 @@ def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):
 def format_time(t_str):
     """make sure timestops have colon between hour and minute"""
     if t_str == t_str: # skip NaN
-        t_str = t_str.zfill(4)
+        t_str = t_str.strip().zfill(4)
         if t_str[2] != ':':
             return t_str[:2] + ':' + t_str[2:]
+        if re.match('(\d{2}):(\d{2}):(\d{2})', t_str):
+            m = re.match('(\d{2}:\d{2}):(\d{2})', t_str)
+            t_str = m[1]
         return t_str
     return t_str
+
+def format_date(date_str):
+    """make sure datestops in monthdayyear format"""
+    if date_str == date_str: # skip NaN
+        date_str = date_str.strip().zfill(8)
+        if re.match('(\d{4})-(\d{2})-(\d{2})', date_str):
+            m = re.match('(\d{4})-(\d{2})-(\d{2})', date_str)
+            date_str = f'{m[2]}{m[3]}{m[1]}'
+    return date_str
+
+
+
+def add_datetimestop(data):
+    """Concatenate date and time fields into a datetime field. Edits dataframe in place"""
+    data['datetimestop'] = pd.to_datetime(data.datestop.apply(format_date) \
+                                          + data.timestop.apply(format_time),
+                                          format='%m%d%Y%H:%M',
+                                          errors='coerce')
+#    data = data.drop(columns=['datestop', 'timestop'])
+    return data
+
+def add_datetimestops(data_dict):
+    """update the dataframes in a data_dict with datetimestop field."""
+    for year in data_dict:
+        print(f'Processing {year}...')
+        add_datetimestop(data_dict[year])
+    print('Done.')
+
+def add_height(data):
+    """Convert ht_feet, ht_inch to height in inches"""
+    data['height'] = data['ht_feet'] * 12 + data['ht_inch']
+    return data
+
 
 def y_n_to_1_0(col, yes_value='Y', set_na=True):
     """convert Y/N column to 1/0 column. set_na keeps blanks as NaN, if false sets to 0"""
@@ -179,8 +286,6 @@ def y_n_to_1_0(col, yes_value='Y', set_na=True):
     if set_na:
         out_col[col.isna()] = np.NaN
     return out_col
-
-
 
 def y_n_to_1_0_cols(data, cols=Y_N_COLS, yes_value='Y', set_na=True):
     """convert Y/N columns to 1/0 columns. set_na keeps blanks as NaN, if false sets to 0"""
@@ -230,12 +335,6 @@ these we'd have to consider adding to the other years as combined columns:
     
     data = data.replace(REPLACE_DICT)
     data = data.drop(columns=list(UNMATCHED_2017_COLS))
-    
-    # this should be in the add_datetimestop function
-    data['datetimestop'] = pd.to_datetime(data.datestop \
-                                          + ' ' + data.timestop,
-                                          errors='coerce')
-    data = data.drop(columns=['datestop', 'timestop'])
     
     # fix column datatypes
     dtypes = get_dtypes()
@@ -310,15 +409,17 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'strintr' : 'stinter',
                                     'strname' : 'stname',
                                     'details_' : 'detailcm'})
-        # 999 is a na_value for the precinct variable
-        data = add_datetimestop(data)
     if convert or year < 2017: 
+        data = add_datetimestop(data)
+        # 999 is a na_value for the precinct variable
         data.pct = data.pct.replace({999: np.nan, 208760: np.nan})
         data.columns = data.columns.str.lower()
         data = data.dropna(subset=['pct'])
-        
+        # convert ht_feet, ht_inch to height 
+        data = add_height(data)
         # convert yes-no columns to 1-0
         y_n_to_1_0_cols(data)
+        
     return data
 
 def load_sqfs(start=2003, end=2018, dirname='../data/stop_frisk'):
@@ -330,21 +431,6 @@ def load_sqfs(start=2003, end=2018, dirname='../data/stop_frisk'):
     print("Done.")
     return stop_frisks
 
-def add_datetimestop(data):
-    """Concatenate date and time fields into a datetime field. Edits dataframe in place"""
-    data['datetimestop'] = pd.to_datetime(data.datestop.str.zfill(8) \
-                                          + data.timestop.apply(format_time),
-                                          format='%m%d%Y%H:%M',
-                                          errors='coerce')
-    data = data.drop(columns=['datestop', 'timestop'])
-    return data
-
-def add_datetimestops(data_dict):
-    """update the dataframes in a data_dict with datetimestop field."""
-    for year in data_dict:
-        print(f'Processing {year}...')
-        add_datetimestop(data_dict[year])
-    print('Done.')
 
 def load_filespecs(start=2003, end=2017, dirname='../data/stop_frisk/filespecs'):
     """Loads filespecs from files named '<year> SQF File Spec.xlsx'
@@ -379,9 +465,11 @@ def clean_and_save_full_sqfs(indirname='../data/stop_frisk', outdirname='../data
     return data
 
 
-def load_full_sqf(dirname='../data/', create=True):
-    """Load the cleaned 2003-2018 dataframe"""
-    if create and (not os.path.exists(f'{dirname}/full_stop_frisks_df.pkl')):
+def load_full_sqf(dirname='../data/', create=True, force=False):
+    """Load the cleaned 2003-2018 dataframe. 
+create=True will generate the dataframe pickle if it doesn't exist. 
+force=True generates the dataframe pickle, overwriting if previously exists"""
+    if force or (create and (not os.path.exists(f'{dirname}/full_stop_frisks_df.pkl'))):
         data = clean_and_save_full_sqfs(indirname=f'{dirname}/stop_frisk', outdirname=dirname)
         return data
     return pd.read_pickle(f'{dirname}/full_stop_frisks_df.pkl')

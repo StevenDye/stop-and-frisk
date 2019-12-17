@@ -129,17 +129,18 @@ COL_RENAME = {'STOP_FRISK_ID' : 'ser_num',
  'STOP_LOCATION_BORO_NAME' : 'city',
  'JURISDICTION_CODE' : 'trhsloc'}
 
-# imperfect mapping of build, haircolr, eyecolor for 2017 -> 2016 earlier
+# mapping of build, haircolr, eyecolor for 2017 -> 2016 earlier
 REPLACE_DICT = {
-    'build' : {'THN' : 'T',
-               'MED' : 'M',
-               'HEA' : 'H',
-               'XXX' : 'Z'},
+    'build' : {'THN' : 'T', # thin
+               'MED' : 'M', # medium
+               'HEA' : 'H', # heavy
+               'XXX' : 'Z', # unknown
+              },
     'haircolr' : {'BLK' : 'BK', # black
                   'BRO' : 'BR', # brown
-                  'BLD' : 'BL', # blond
-                  'BLN' : 'BL', #blond
-                  'XXX' : 'XX',
+                  'BLD' : 'BA', # bald
+                  'BLN' : 'BL', # blond
+                  'XXX' : 'XX', # unknown
                   'GRY' : 'GY', # gray
                   'WHI' : 'WH', # white
                   'SDY' : 'SN', # sandy
@@ -151,16 +152,18 @@ REPLACE_DICT = {
                  },
     'eyecolor' : {'BRO' : 'BR', # brown
                 'BLK' : 'BK', # black
-                'ZZZ' : 'XX', 
+                'ZZZ' : 'XX', # unknown
                 'BLU' : 'BL', # blue
-                'HAZ' : 'HA', # hazel
+                'HAZ' : 'HA', # hazel 
                 'GRN' : 'GR', # green
                 'GRY' : 'GY', # gray
-                'MAR' : 'MA' # marbled?
-                'MUL' : 'MC' # multicolored
-                'OTH' : 'Z'},
-    'sex' : {'MALE' : 'M',
-             'FEMALE' : 'F'},
+                'MAR' : 'MA', # marbled?
+                'MUL' : 'DF', # mul -> two different
+                'OTH' : 'ZZ',  # other
+                 },
+    'sex' : {'MALE' : 'M',  # male
+             'FEMALE' : 'F' # female
+            },
     'race' : {'BLACK' : 'B',
               'WHITE HISPANIC' : 'Q',
               'WHITE' : 'W',

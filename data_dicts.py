@@ -2,7 +2,10 @@
 author : @climatebrad
 """
 
+import numpy as np
+
 NA_VALUES = (' ', '12311900', '*', '**', '(nul' ,'(n', '(', '(nu')
+
 Y_N_COLS = ('arstmade', 'pistol', 'machgun', 'asltweap',
             'riflshot', 'knifcuti', 'othrweap', 'wepfound',
             'cs_lkout', 'cs_objcs', 'cs_casng', 'cs_cloth', 'cs_descr',
@@ -12,11 +15,18 @@ Y_N_COLS = ('arstmade', 'pistol', 'machgun', 'asltweap',
             'ac_assoc', 'ac_evasv', 'ac_incid', 'ac_cgdir', 'ac_inves', 'ac_other',
             'rf_furt', 'rf_bulg', 'rf_vcrim', 'rf_vcact', 'rf_verbl', 'rf_othsw', 'rf_attir', 'rf_knowl',
             'pf_hands', 'pf_wall', 'pf_grnd', 'pf_drwep', 'pf_ptwep', 'pf_baton', 'pf_hcuff',
-            'pf_pepsp', 'pf_other', 'radio', 'rf_rfcmp',
+            'pf_pepsp', 'pf_other', 'radio', 'rf_rfcmp','officrid', 'offshld', 'offverb',
             'othpers', 'explnstp', 'offunif', 'frisked', 'searched', 'contrabn', 'adtlrept',
             'sumissue', )
 
-CAT_COLS =  ('city',
+REPLACE_VALUES = {
+    'pct' : { 999: np.nan, 208760: np.nan },
+    'offverb' : {'V' : 'Y', '0' : 'N' }, # verbal statement provided by officer (if not in uniform)
+    'offshld' : {'S' : 'Y', '0' : 'N' }, # shield provided by officer (if not in uniform)  
+    'city' : {'STATEN IS' : 'STATEN ISLAND'},
+}
+
+CAT_COLS =  ('city', # aka boro
              'sector',
              'post',      # ignorable column
              'dettypcm',  
@@ -43,7 +53,8 @@ IGNORE_COLS = ('detail1_',
                'post', 
                'comppct',
                'compyear',
-               'state')
+               'state',
+               'rescode')
 
 UNMATCHED_2017_COLS = ('ISSUING_OFFICER_RANK',
  'SUPERVISING_OFFICER_RANK',
@@ -130,7 +141,8 @@ COL_RENAME = {'STOP_FRISK_ID' : 'ser_num',
  'JURISDICTION_CODE' : 'trhsloc'}
 
 # mapping of build, haircolr, eyecolor for 2017 -> 2016 earlier
-REPLACE_DICT = {
+REPLACE_2017_DICT = {
+    'city' : {'STATEN IS' : 'STATEN ISLAND'},
     'build' : {'THN' : 'T', # thin
                'MED' : 'M', # medium
                'HEA' : 'H', # heavy

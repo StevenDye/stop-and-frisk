@@ -27,7 +27,7 @@ import os.path
 import pandas as pd
 import numpy as np
 from data_dicts import *
-from clean_cat_values import CLEAN_CAT_VALUES
+from clean_cat_values import CLEAN_CAT_VALUES, CAT_FILL_NA_VALUES
 
 
 def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):
@@ -80,18 +80,25 @@ def add_height(data):
     return data
 
 
-def y_n_to_1_0(col, yes_value='Y', set_na=True):
-    """convert Y/N column to 1/0 column. set_na keeps blanks as NaN, if false sets to 0"""
-    out_col = pd.Series(np.where(col.isin([yes_value, '1']), 1, 0), col.index).astype('int8')
+def add_month_weekday(data):
+    """Fill NaN with month and weekday names using datetimestop"""
+    pass
+
+def y_n_to_1_0(col, yes_values=['Y'], set_na=True):
+    """convert Y/N column to 1/0 column. 
+sets yes_value to 1, other values to 0
+set_na keeps blanks as NaN, if false sets to 0"""
+    yes_values.append('1')
+    out_col = pd.Series(np.where(col.isin(yes_values), 1, 0), col.index).astype('int8')
     if set_na:
         out_col[col.isna()] = np.NaN
     return out_col
 
-def y_n_to_1_0_cols(data, cols=Y_N_COLS, yes_value='Y', set_na=True):
+def y_n_to_1_0_cols(data, cols=Y_N_COLS, yes_values=['Y'], set_na=True):
     """convert Y/N columns to 1/0 columns. set_na keeps blanks as NaN, if false sets to 0"""
     for y_n_col in Y_N_COLS:
         if y_n_col in data:
-            data[y_n_col] = y_n_to_1_0(data[y_n_col], yes_value, set_na)
+            data[y_n_col] = y_n_to_1_0(data[y_n_col], yes_values, set_na)
 
 def height_to_feet_inch(data, height_col):
     """Convert the height_col column to ht_feet, ht_inch
@@ -133,7 +140,7 @@ these we'd have to consider adding to the other years as combined columns:
     
     data = height_to_feet_inch(data, 'SUSPECT_HEIGHT')
     
-    data = data.replace(REPLACE_DICT)
+    data = data.replace(REPLACE_2017_DICT)
     data = data.drop(columns=list(UNMATCHED_2017_COLS))
     
     # fix column datatypes
@@ -146,6 +153,7 @@ these we'd have to consider adding to the other years as combined columns:
 def clean_categories(data):
     """get data categories ready for one-hot-encoding"""
     data = data.replace(CLEAN_CAT_VALUES)
+    data = data.fillna(CAT_FILL_NA_VALUES)
     data = data.dropna(subset=CLEAN_CAT_VALUES.keys()).astype('object').astype('category')
     return data
 
@@ -218,7 +226,7 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
     if convert or year < 2017: 
         data = add_datetimestop(data)
         # 999 is a na_value for the precinct variable
-        data.pct = data.pct.replace({999: np.nan, 208760: np.nan})
+        data = data.replace(REPLACE_VALUES)
         data.columns = data.columns.str.lower()
         data = data.dropna(subset=['pct'])
         # convert ht_feet, ht_inch to height 

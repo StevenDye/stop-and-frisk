@@ -27,7 +27,7 @@ import os.path
 import pandas as pd
 import numpy as np
 from data_dicts import *
-from clean_cat_values import CLEAN_CAT_VALUES, CAT_FILL_NA_VALUES
+from clean_cat_values import CLEAN_CAT_VALUES, CAT_FILL_NA_VALUES, MODEL_IGNORE_COLS
 
 
 def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):
@@ -82,8 +82,14 @@ def add_height(data):
 
 def add_month_weekday(data):
     """Fill NaN with month and weekday names using datetimestop"""
-    data['month'] = data.datetimestop.dt.month_name
-    data['day'] = data.datetimestop.dt.day_name
+    data['month'] = data.datetimestop.dt.month_name()
+    data['day'] = data.datetimestop.dt.day_name()
+    return data
+
+def add_pct_sector(data):
+    """sectors are subdivisions of precincts"""
+    data['pct_sector'] = data.pct.astype(int).astype(str) + data.sector.astype('object').fillna('').astype(str)
+    data.pct_sector = data.pct_sector.astype('category')
     return data
 
 def y_n_to_1_0(col, yes_values=['Y'], set_na=True):
@@ -158,6 +164,7 @@ def clean_categories(data):
                 .replace(CLEAN_CAT_VALUES) \
                 .fillna(CAT_FILL_NA_VALUES) \
                 .dropna(subset=CLEAN_CAT_VALUES.keys()) \
+                .drop(columns=MODEL_IGNORE_COLS) \
                 .astype('category')
     return data
 
@@ -228,14 +235,17 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'strname' : 'stname',
                                     'details_' : 'detailcm'})
     if convert or year < 2017: 
+        data.columns = data.columns.str.lower()
+        # add date-time columns
         data = add_datetimestop(data)
         data = add_month_weekday(data)
         # 999 is a na_value for the precinct variable
         data = data.replace(REPLACE_VALUES)
-        data.columns = data.columns.str.lower()
         data = data.dropna(subset=['pct'])
         # convert ht_feet, ht_inch to height 
         data = add_height(data)
+        # add pct-sector column
+        data = add_pct_sector(data)
         # convert yes-no columns to 1-0
         y_n_to_1_0_cols(data)
         

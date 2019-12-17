@@ -24,12 +24,16 @@ REPLACE_VALUES = {
     'offverb' : {'V' : 'Y', '0' : 'N' }, # verbal statement provided by officer (if not in uniform)
     'offshld' : {'S' : 'Y', '0' : 'N' }, # shield provided by officer (if not in uniform)  
     'city' : {'STATEN IS' : 'STATEN ISLAND'},
+    'eyecolor' : {'Z' : 'ZZ', # other
+                  'UN' : 'XX', # unknown
+                  'MC' : 'DF', # multicolor -> different
+                 },
+    'haircolr' : {'ZZZ' : 'ZZ'} # other
 }
 
 CAT_COLS =  ('city', # aka boro
              'sector',
              'post',      # ignorable column
-             'pct',
              'dettypcm',  
              'officrid',
              'rescode',
@@ -47,15 +51,17 @@ CAT_COLS =  ('city', # aka boro
              'trhsloc',
              'addrtyp',
              'month',
-             'day')
+             'day',
+             'pct_sector')
 
 IGNORE_COLS = ('detail1_', 
                'linecm', 
                'post', 
-               'comppct',
-               'compyear',
-               'state',
-               'rescode')
+               'comppct', # never used
+               'compyear', # never used
+               'state', # always NY
+               'rescode',
+              )
 
 UNMATCHED_2017_COLS = ('ISSUING_OFFICER_RANK',
  'SUPERVISING_OFFICER_RANK',
@@ -172,7 +178,7 @@ REPLACE_2017_DICT = {
                 'GRY' : 'GY', # gray
                 'MAR' : 'MA', # marbled?
                 'MUL' : 'DF', # mul -> two different
-                'OTH' : 'ZZ',  # other
+                'OTH' : 'Z',  # other
                  },
     'sex' : {'MALE' : 'M',  # male
              'FEMALE' : 'F' # female

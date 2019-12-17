@@ -141,22 +141,40 @@ REPLACE_DICT = {
                'MED' : 'M',
                'HEA' : 'H',
                'XXX' : 'Z'},
-    'haircolr' : {'BLK' : 'BK',
-                  'BRO' : 'BR',
-                  'BLD' : 'BA',
+    'haircolr' : {'BLK' : 'BK', # black
+                  'BRO' : 'BR', # brown
+                  'BLD' : 'BL', # blond
+                  'BLN' : 'BL', #blond
                   'XXX' : 'XX',
-                  'BLN' : 'BL',
-                  'GRY' : 'GY'},
-    'eyecolor' : {'BRO' : 'BR',
-                'BLK' : 'BK',
-                'ZZZ' : 'XX',
-                'BLU' : 'BL',
-                'HAZ' : 'HA',
-                'GRN' : 'GR',
-                'GRY' : 'GY',
+                  'GRY' : 'GY', # gray
+                  'WHI' : 'WH', # white
+                  'SDY' : 'SN', # sandy
+                  'RED' : 'RD', # red
+                  'PNK' : 'DY', # pink -> dyed
+                  'PLE' : 'DY', # purple -> dyed
+                  'GRN' : 'DY', # green -> dyed
+                  'ORG' : 'DY', # orange -> dyed 
+                 },
+    'eyecolor' : {'BRO' : 'BR', # brown
+                'BLK' : 'BK', # black
+                'ZZZ' : 'XX', 
+                'BLU' : 'BL', # blue
+                'HAZ' : 'HA', # hazel
+                'GRN' : 'GR', # green
+                'GRY' : 'GY', # gray
+                'MAR' : 'MA' # marbled?
+                'MUL' : 'MC' # multicolored
                 'OTH' : 'Z'},
     'sex' : {'MALE' : 'M',
-             'FEMALE' : 'F'}
+             'FEMALE' : 'F'},
+    'race' : {'BLACK' : 'B',
+              'WHITE HISPANIC' : 'Q',
+              'WHITE' : 'W',
+              'BLACK HISPANIC' : 'P',
+              'ASIAN/PAC.ISL' : 'A',
+              'ASIAN / PACIFIC ISLANDER' : 'A',
+              'AMER IND' : 'I',
+              'AMERICAN INDIAN/ALASKAN NATIVE' : 'I'},
 }
 
 # cleaning the crimsusp entries.

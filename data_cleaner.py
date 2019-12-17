@@ -82,7 +82,9 @@ def add_height(data):
 
 def add_month_weekday(data):
     """Fill NaN with month and weekday names using datetimestop"""
-    pass
+    data['month'] = data.datetimestop.dt.month_name
+    data['day'] = data.datetimestop.dt.day_name
+    return data
 
 def y_n_to_1_0(col, yes_values=['Y'], set_na=True):
     """convert Y/N column to 1/0 column. 
@@ -152,9 +154,11 @@ these we'd have to consider adding to the other years as combined columns:
 
 def clean_categories(data):
     """get data categories ready for one-hot-encoding"""
-    data = data.replace(CLEAN_CAT_VALUES)
-    data = data.fillna(CAT_FILL_NA_VALUES)
-    data = data.dropna(subset=CLEAN_CAT_VALUES.keys()).astype('object').astype('category')
+    data = data.astype('object') \
+                .replace(CLEAN_CAT_VALUES) \
+                .fillna(CAT_FILL_NA_VALUES) \
+                .dropna(subset=CLEAN_CAT_VALUES.keys()) \
+                .astype('category')
     return data
 
 
@@ -225,6 +229,7 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'details_' : 'detailcm'})
     if convert or year < 2017: 
         data = add_datetimestop(data)
+        data = add_month_weekday(data)
         # 999 is a na_value for the precinct variable
         data = data.replace(REPLACE_VALUES)
         data.columns = data.columns.str.lower()

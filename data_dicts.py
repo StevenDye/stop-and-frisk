@@ -29,6 +29,7 @@ REPLACE_VALUES = {
 CAT_COLS =  ('city', # aka boro
              'sector',
              'post',      # ignorable column
+             'pct',
              'dettypcm',  
              'officrid',
              'rescode',

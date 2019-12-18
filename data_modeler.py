@@ -1,5 +1,5 @@
 """
-@author: climatebrad
+@author: climatebrad, StevenDye
 """
 
 import os.path
@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
@@ -68,3 +69,28 @@ def split_and_logit(X, y, **kwargs):
     logit = run_logit(split, solver='saga', penalty='l1', max_iter=4000)
     print_residuals(split, logit)
     return split, logit
+
+
+def fill_NaNs(X):
+    """Fill all missing values in a dataframe with 'NoVal' entry"""
+    category_list = X.columns.to_list()
+    X_nona = pd.DataFrame()
+    for category in category_list:
+        X_nona[category] = X[category].cat.add_categories('NoVal').fillna('NoVal')
+    return X_nona
+
+
+def categorical_encoder(X):
+    """One hot encodes categorical data in a dataframe"""
+    encoder = OneHotEncoder()
+    X_encoded = encoder.fit_transform(X)
+    return X_encoded
+
+
+def run_rf(split, **kwargs):
+    """run random forest: good defaults: ?"""
+    smote = SMOTE()
+    X_train_resampled, y_train_resampled = smote.fit_sample(split['X_train'], split['y_train']) 
+    rf = RandomForestClassifier(max_depth=2)
+    rf.fit(X_train_resampled, y_train_resampled)
+    return rf

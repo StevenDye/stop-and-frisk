@@ -175,12 +175,13 @@ def simplify_category(data, catname):
 def clean_categories(data):
     """get data categories ready for one-hot-encoding"""
     cat_set = set(CLEAN_CAT_VALUES) | set(CAT_FILL_NA_VALUES) 
-    data = data.astype({cat : 'object' for cat in cat_set}) \
+    cat_set = cat_set.intersection(set(data.columns))
+    data = data.astype({cat : 'object' for cat in cat_set}, errors='ignore') \
                 .replace(CLEAN_CAT_VALUES) \
                 .fillna(CAT_FILL_NA_VALUES) \
                 .dropna(subset=CLEAN_CAT_VALUES.keys()) \
                 .drop(columns=MODEL_IGNORE_COLS, errors='ignore') \
-                .astype({cat : 'category' for cat in cat_set})
+                .astype({cat : 'category' for cat in cat_set}, errors='ignore')
     for catname in REPLACE_REVERSE_DICT:
         data = simplify_category(data, catname)    
     return data

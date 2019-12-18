@@ -81,10 +81,11 @@ def fill_NaNs(X):
 
 
 def categorical_encoder(X):
-    """One hot encodes categorical data in a dataframe"""
+    """One hot encodes categorical data in a dataframe. Returns the encoded data and the names of the features"""
     encoder = OneHotEncoder()
     X_encoded = encoder.fit_transform(X)
-    return X_encoded
+    feat_names = encoder.get_feature_names()
+    return X_encoded, feat_names
 
 
 def run_rf(split, **kwargs):

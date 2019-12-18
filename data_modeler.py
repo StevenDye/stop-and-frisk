@@ -12,15 +12,14 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
-PRE_STOP_OBSERVABLES = {'year', 'pct', 'ser_num', 'inout',
+PRE_STOP_OBSERVABLES = {'month', 'day', 'pct_sector', 'inout',
                         'trhsloc', 'perobs', 'crimsusp', 'offunif', 'cs_objcs', 
                         'cs_descr', 'cs_casng', 'cs_lkout', 'cs_cloth', 'cs_drgtr',
                         'cs_furtv', 'cs_vcrim', 'cs_bulge', 'cs_other', 'ac_incid',
-                        'ac_time', 'ac_stsnd', 'ac_other', 'repcmd', 'revcmd', 'age',
+                        'ac_time', 'ac_stsnd', 'ac_other', 'age',
                         'sex', 'race', 'height', 'weight', 'haircolr', 'eyecolor', 
-                        'build', 'othfeatr', 'addrtyp', 'rescode', 'premtype',
-                        'premname', 'addrnum', 'xcoord', 
-                        'ycoord',}
+                        'build', 'othfeatr', 'addrtyp', 
+                        'premname',}
 
 DURING_STOP_OBSERVABLES = {'recstat', 'perstop', 'typeofid', 'explnstp', 'othpers',
                          'officrid', 'frisked', 'searched', 'contrabn', 'adtlrept',
@@ -88,9 +87,18 @@ def categorical_encoder(X):
 
 
 def run_rf(split, **kwargs):
-    """run random forest: good defaults: ?"""
+    """run random forest: good defaults: max_depth=2"""
     smote = SMOTE()
     X_train_resampled, y_train_resampled = smote.fit_sample(split['X_train'], split['y_train']) 
-    rf = RandomForestClassifier(max_depth=2)
+    rf = RandomForestClassifier(**kwargs)
     rf.fit(X_train_resampled, y_train_resampled)
     return rf
+
+def run_all():
+    X_category = df.select_dtypes(include='category')
+    X = fill_NaNs(X_category)
+    X = categorical_encoder(X)
+    split = load_split(X, y, stratify=y)
+    clf = run_rf(split, max_depth=2)
+    clf.feature_importances_
+    balanced_accuracy_score(split['y_test'], clf.predict['X_test'])

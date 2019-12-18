@@ -27,7 +27,7 @@ import os.path
 import pandas as pd
 import numpy as np
 from data_dicts import *
-from clean_cat_values import CLEAN_CAT_VALUES, CAT_FILL_NA_VALUES, MODEL_IGNORE_COLS
+from clean_cat_values import *
 
 
 def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):

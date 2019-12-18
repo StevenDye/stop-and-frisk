@@ -27,7 +27,7 @@ import os.path
 import pandas as pd
 import numpy as np
 from data_dicts import *
-from clean_cat_values import CLEAN_CAT_VALUES, CAT_FILL_NA_VALUES, MODEL_IGNORE_COLS
+from clean_cat_values import *
 
 
 def sqf_excel_to_csv(infile, outfile, dirname='../data/stop_frisk'):
@@ -88,7 +88,7 @@ def add_month_weekday(data):
 
 def add_pct_sector(data):
     """sectors are subdivisions of precincts"""
-    data['pct_sector'] = data.pct.astype(int).astype(str) + data.sector.astype('object').fillna('').astype(str)
+    data['pct_sector'] = data.pct.astype(int).astype(str) + '-' + data.sector.astype('object').fillna('').astype(str)
     data.pct_sector = data.pct_sector.astype('category')
     return data
 
@@ -107,6 +107,7 @@ def y_n_to_1_0_cols(data, cols=Y_N_COLS, yes_values=['Y'], set_na=True):
     for y_n_col in Y_N_COLS:
         if y_n_col in data:
             data[y_n_col] = y_n_to_1_0(data[y_n_col], yes_values, set_na)
+    return data
 
 def height_to_feet_inch(data, height_col):
     """Convert the height_col column to ht_feet, ht_inch
@@ -158,14 +159,49 @@ these we'd have to consider adding to the other years as combined columns:
     
     return data
 
+def gen_replace_dict(key_list_dict):
+    """change { a : [1, 2, 3]} to {1 : a, 2 : a, 3 : a}"""
+    return { val : key for key, val_list in key_list_dict.items() for val in val_list}
+
+def simplify_category(data, catname):
+    """clean category catname"""
+    data = data.astype({catname : 'object'})
+    data = data.replace({catname : gen_replace_dict(REPLACE_REVERSE_DICT[catname])})
+    valid_vals = list(set(USE_OTHER_VALUES[catname]) | set(REPLACE_REVERSE_DICT[catname]))
+    data.loc[~data[catname].isin(valid_vals), catname] = "OTHER"
+    data = data.astype({catname : 'category'})
+    return data
+
 def clean_categories(data):
     """get data categories ready for one-hot-encoding"""
-    data = data.astype('object') \
+    cat_set = set(CLEAN_CAT_VALUES) | set(CAT_FILL_NA_VALUES) 
+    cat_set = cat_set.intersection(set(data.columns))
+    data = data.astype({cat : 'object' for cat in cat_set}, errors='ignore') \
                 .replace(CLEAN_CAT_VALUES) \
                 .fillna(CAT_FILL_NA_VALUES) \
                 .dropna(subset=CLEAN_CAT_VALUES.keys()) \
-                .drop(columns=MODEL_IGNORE_COLS) \
-                .astype('category')
+                .drop(columns=MODEL_IGNORE_COLS, errors='ignore') \
+                .astype({cat : 'category' for cat in cat_set}, errors='ignore')
+    for catname in REPLACE_REVERSE_DICT:
+        data = simplify_category(data, catname)    
+    return data
+
+
+
+def engineer_features(data):
+    """Engineer features. Probably should be in data_modeler"""
+    # add date-time columns
+    data = add_datetimestop(data)
+    data = add_month_weekday(data)
+    data = data.dropna(subset=['pct'])
+    # convert ht_feet, ht_inch to height 
+    data = add_height(data)
+    # add pct-sector column
+    data = add_pct_sector(data)
+    # convert yes-no columns to 1-0
+    data = y_n_to_1_0_cols(data)
+    # clean categories
+    data = clean_categories(data)
     return data
 
 
@@ -200,10 +236,13 @@ def get_dtypes(on_input=True):
                 dtypes.pop(key)
                 
     return dtypes
-        
-def load_sqf(year, dirname='../data/stop_frisk', convert=True):
+   
+
+
+def load_sqf(year, dirname='../data/stop_frisk', convert=True, engineer=True):
     """Load and clean sqf csv file by year. 
-    convert=True if 2017, 2018 should be converted to pre-2017 format."""
+    convert=True if 2017, 2018 should be converted to pre-2017 format.
+    engineer=True to engineer features for modeling."""
     print(f'Loading {year}...')
     # '*' is a na_value for the beat variable
     # '12311900' is a na_value for DOB
@@ -236,20 +275,13 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'details_' : 'detailcm'})
     if convert or year < 2017: 
         data.columns = data.columns.str.lower()
-        # add date-time columns
-        data = add_datetimestop(data)
-        data = add_month_weekday(data)
-        # 999 is a na_value for the precinct variable
         data = data.replace(REPLACE_VALUES)
-        data = data.dropna(subset=['pct'])
-        # convert ht_feet, ht_inch to height 
-        data = add_height(data)
-        # add pct-sector column
-        data = add_pct_sector(data)
-        # convert yes-no columns to 1-0
-        y_n_to_1_0_cols(data)
-        
+        if engineer:
+            data = engineer_features(data)        
     return data
+
+
+
 
 def load_sqfs(start=2003, end=2018, dirname='../data/stop_frisk'):
     """Loads sqf data in format dir/<year>.csv into dict of dataframes

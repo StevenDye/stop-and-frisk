@@ -94,11 +94,13 @@ def run_rf(split, **kwargs):
     rf.fit(X_train_resampled, y_train_resampled)
     return rf
 
-def run_all():
-    X_category = df.select_dtypes(include='category')
+def run_all(data):
+    X_category = data.select_dtypes(include='category')
+    y = data.arstmade
     X = fill_NaNs(X_category)
     X = categorical_encoder(X)
     split = load_split(X, y, stratify=y)
     clf = run_rf(split, max_depth=2)
-    clf.feature_importances_
-    balanced_accuracy_score(split['y_test'], clf.predict['X_test'])
+    print(clf.feature_importances_)
+    print(balanced_accuracy_score(split['y_test'], clf.predict['X_test']))
+    return split, clf

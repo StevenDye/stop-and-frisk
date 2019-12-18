@@ -31,6 +31,8 @@ REPLACE_VALUES = {
     'haircolr' : {'ZZZ' : 'ZZ'} # other
 }
 
+# if a column is not listed here it will not be converted to dtype category!
+
 CAT_COLS =  ('city', # aka boro
              'sector',
              'post',      # ignorable column
@@ -52,7 +54,10 @@ CAT_COLS =  ('city', # aka boro
              'addrtyp',
              'month',
              'day',
-             'pct_sector')
+             'pct_sector',
+             'crimsusp',
+             'premname',
+             'pct')
 
 IGNORE_COLS = ('detail1_', 
                'linecm', 

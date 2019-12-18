@@ -18,7 +18,7 @@ PRE_STOP_OBSERVABLES = {'month', 'day', 'pct_sector', 'inout',
                         'cs_furtv', 'cs_vcrim', 'cs_bulge', 'cs_other', 'ac_incid',
                         'ac_time', 'ac_stsnd', 'ac_other', 'age',
                         'sex', 'race', 'height', 'weight', 'haircolr', 'eyecolor', 
-                        'build', 'othfeatr', 'addrtyp', 
+                        'build', 'addrtyp', 
                         'premname',}
 
 DURING_STOP_OBSERVABLES = {'recstat', 'perstop', 'typeofid', 'explnstp', 'othpers',
@@ -79,24 +79,26 @@ def fill_NaNs(X):
     return X_nona
 
 
-def categorical_encoder(X):
-    """One hot encodes categorical data in a dataframe. Returns the encoded data and the names of the features"""
-    encoder = OneHotEncoder()
-    X_encoded = encoder.fit_transform(X)
-    feat_names = encoder.get_feature_names()
-    return X_encoded, feat_names
+def categorical_encoder(X, handle_unknown='ignore', **kwargs):
+    """One hot encodes categorical data in a dataframe.
+Default value handle_unkown='ignore', since possible categories in 
+test will not be in train"""
+    encoder = OneHotEncoder(handle_unknown=handle_unknown, **kwargs)
+    encoder.fit(X)
+    return encoder
 
 
-def run_rf(split, **kwargs):
+def run_rf(X_train, y_train, max_depth=2, **kwargs):
     """run random forest: good defaults: max_depth=2"""
     smote = SMOTE()
-    X_train_resampled, y_train_resampled = smote.fit_sample(split['X_train'], split['y_train']) 
-    rf = RandomForestClassifier(**kwargs)
+    X_train_resampled, y_train_resampled = smote.fit_sample(X_train, y_train) 
+    rf = RandomForestClassifier(max_depth=max_depth, **kwargs)
     rf.fit(X_train_resampled, y_train_resampled)
     return rf
 
 def run_all(data):
     X_category = data.select_dtypes(include='category')
+    X_noncat = data.select_dtypes(exclude='category')
     y = data.arstmade
     X = fill_NaNs(X_category)
     X = categorical_encoder(X)
@@ -105,3 +107,17 @@ def run_all(data):
     print(clf.feature_importances_)
     print(balanced_accuracy_score(split['y_test'], clf.predict['X_test']))
     return split, clf
+
+def encode_X_cat(X_train, **kwargs):
+    """"one-hot-encode categorical variables in X_train, return merged dataframe"""
+    X_cat = X_train.select_dtypes(include='category')
+    X_noncat = X_train.select_dtypes(exclude='category')
+    X_cat = fill_NaNs(X_cat)
+    cat_encoder = categorical_encoder(X_cat, **kwargs)
+    X_cat_ohe = cat_encoder.transform(X_cat)
+    X_ohe_df = pd.DataFrame(X_cat_ohe.toarray(), 
+                            columns=cat_encoder.get_feature_names(X_cat_ohe.columns),
+                            index=X_cat.index)
+    X_result = X_noncat.join(X_ohe_df)
+    return X_result
+     

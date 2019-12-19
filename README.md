@@ -3,6 +3,9 @@ This project looks at the relationship between reported justifications for stops
 
 * [Explanations of variables](https://www.icpsr.umich.edu/icpsrweb/NACJD/studies/21660/variables)
 
+
+* [Presentation](https://docs.google.com/presentation/d/1BC6uAkBflQgljIwlLT_8lBUmCedhodlroJTThGP02ZU/)
+
 Date: December 2019
 
 Project Members: Brad Johnson and Steven Dye
